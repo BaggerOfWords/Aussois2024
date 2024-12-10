@@ -88,7 +88,7 @@ def root_fun(original_input, labels, temperature, repetition_penalty, get_discri
 
 def rec_fun(states, token_ids, attention_masks, labels, temperature, repetition_penalty, rollout_size, get_discriminator_score):
     """Get scores from current nodes."""
-    model_inputs = gpt.prepare_inputs_for_generation(token_ids, attention_mask=attention_masks, use_cache=True, past=states)
+    model_inputs = gpt.prepare_inputs_for_generation(token_ids, attention_mask=attention_masks, use_cache=True, past_key_values=states)
     with torch.no_grad():
         outputs = gpt(**model_inputs, return_dict=True)
         next_states = outputs.past_key_values
@@ -107,7 +107,7 @@ def rec_fun(states, token_ids, attention_masks, labels, temperature, repetition_
                 token_ids = torch.cat((token_ids, next_tokens), dim=1)
                 attention_masks = torch.cat((attention_masks, torch.ones_like(next_tokens, dtype=torch.long, device=device)), dim=1)
                 prompt_masked_input_ids = torch.cat((prompt_masked_input_ids, next_tokens), dim=1)
-                model_inputs = gpt.prepare_inputs_for_generation(token_ids, attention_mask=attention_masks, use_cache=True, past=outputs.past_key_values)
+                model_inputs = gpt.prepare_inputs_for_generation(token_ids, attention_mask=attention_masks, use_cache=True, past_key_values=outputs.past_key_values)
                 with torch.no_grad():
                     outputs = gpt(**model_inputs, return_dict=True)
                     priors = repetition_penalty(prompt_masked_input_ids, outputs.logits[:, -1, :] / temperature)
